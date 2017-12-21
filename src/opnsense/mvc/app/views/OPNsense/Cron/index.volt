@@ -28,7 +28,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 <script type="text/javascript">
 
-    $( document ).ready(function() {
+    $(document).ready(function () {
         /**
          * inline open dialog, go back to previous page on exit
          */
@@ -44,8 +44,8 @@ POSSIBILITY OF SUCH DAMAGE.
                 // clear validation errors (if any)
                 clearFormValidation('frm_' + editDlg);
                 // show
-                $('#'+editDlg).modal({backdrop: 'static', keyboard: false});
-                $('#'+editDlg).on('hidden.bs.modal', function () {
+                $('#' + editDlg).modal({backdrop: 'static', keyboard: false});
+                $('#' + editDlg).on('hidden.bs.modal', function () {
                     // go back to previous page on exit
                     parent.history.back();
                 });
@@ -53,33 +53,35 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
             // define save action
-            $("#btn_"+editDlg+"_save").unbind('click').click(function(){
-                saveFormToEndpoint(url=setUrl+uuid,
-                        formid='frm_' + editDlg, callback_ok=function(){
-                            // do reconfigure of cron after save (because we're leaving back to the sender)
-                            ajaxCall(url="/api/cron/service/reconfigure", sendData={}, callback=function(data,status) {
-                                $("#"+editDlg).modal('hide');
-                            });
-                        }, true);
+            $("#btn_" + editDlg + "_save").unbind('click').click(function () {
+                saveFormToEndpoint(url = setUrl + uuid,
+                    formid = 'frm_' + editDlg, callback_ok = function () {
+                        // do reconfigure of cron after save (because we're leaving back to the sender)
+                        ajaxCall(url = "/api/cron/service/reconfigure", sendData = {}, callback = function (data, status) {
+                            $("#" + editDlg).modal('hide');
+                        });
+                    }, true);
             });
 
         }
+
         /*************************************************************************************************************
          * link grid actions
          *************************************************************************************************************/
 
         $("#grid-jobs").UIBootgrid(
-                {   'search':'/api/cron/settings/searchJobs',
-                    'get':'/api/cron/settings/getJob/',
-                    'set':'/api/cron/settings/setJob/',
-                    'add':'/api/cron/settings/addJob/',
-                    'del':'/api/cron/settings/delJob/',
-                    'toggle':'/api/cron/settings/toggleJob/'
-                }
+            {
+                'search': '/api/cron/settings/searchJobs',
+                'get': '/api/cron/settings/getJob/',
+                'set': '/api/cron/settings/setJob/',
+                'add': '/api/cron/settings/addJob/',
+                'del': '/api/cron/settings/delJob/',
+                'toggle': '/api/cron/settings/toggleJob/'
+            }
         );
 
         {% if (selected_uuid|default("") != "") %}
-            openDialog(uuid='{{selected_uuid}}');
+        openDialog(uuid = '{{ selected_uuid }}');
         {% endif %}
 
         /*************************************************************************************************************
@@ -87,16 +89,16 @@ POSSIBILITY OF SUCH DAMAGE.
          *************************************************************************************************************/
 
         /**
-         * re
          * Reconfigure cron - activate changes
          */
-        $("#reconfigureAct").click(function(){
-            $("#reconfigureAct_progress").addClass("fa fa-spinner fa-pulse");
-            ajaxCall(url="/api/cron/service/reconfigure", sendData={}, callback=function(data,status) {
-                // when done, disable progress animation.
-                $("#reconfigureAct_progress").removeClass("fa fa-spinner fa-pulse");
+        $("#reconfigureAct").click(function () {
+            showLoading("#reconfigureAct_progress");
 
-                if (status != "success" || data['status'] != 'ok') {
+            ajaxCall(url = "/api/cron/service/reconfigure", sendData = {}, callback = function (data, status) {
+                // when done, disable progress animation.
+               hideLoading("#reconfigureAct_progress");
+
+                if (status !== "success" || data['status'] !== 'ok') {
                     BootstrapDialog.show({
                         type: BootstrapDialog.TYPE_WARNING,
                         title: "Error reconfiguring cron",
@@ -118,11 +120,13 @@ POSSIBILITY OF SUCH DAMAGE.
 <div class="tab-content content-box tab-content">
     <div id="jobs" class="tab-pane fade in active">
         <!-- tab page "cron items" -->
-        <table id="grid-jobs" class="table table-condensed table-hover table-striped table-responsive" data-editDialog="DialogEdit">
+        <table id="grid-jobs" class="table table-condensed table-hover table-striped table-responsive"
+               data-editDialog="DialogEdit">
             <thead>
             <tr>
                 <th data-column-id="origin" data-type="string" data-visible="false">{{ lang._('Origin') }}</th>
-                <th data-column-id="enabled" data-width="6em" data-type="string" data-formatter="rowtoggle">{{ lang._('Enabled') }}</th>
+                <th data-column-id="enabled" data-width="6em" data-type="string"
+                    data-formatter="rowtoggle">{{ lang._('Enabled') }}</th>
                 <th data-column-id="minutes" data-type="string">{{ lang._('Minutes') }}</th>
                 <th data-column-id="hours" data-type="string">{{ lang._('Hours') }}</th>
                 <th data-column-id="days" data-type="string">{{ lang._('Days') }}</th>
@@ -130,18 +134,26 @@ POSSIBILITY OF SUCH DAMAGE.
                 <th data-column-id="weekdays" data-type="string">{{ lang._('Weekdays') }}</th>
                 <th data-column-id="description" data-type="string">{{ lang._('Description') }}</th>
                 <th data-column-id="command" data-type="string">{{ lang._('Command') }}</th>
-                <th data-column-id="commands" data-width="7em" data-formatter="commands" data-sortable="false">{{ lang._('Edit') }} | {{ lang._('Delete') }}</th>
-                <th data-column-id="uuid" data-type="string" data-identifier="true" data-visible="false">{{ lang._('ID') }}</th>
+                <th data-column-id="commands" data-width="7em" data-formatter="commands"
+                    data-sortable="false">{{ lang._('Edit') }} | {{ lang._('Delete') }}</th>
+                <th data-column-id="uuid" data-type="string" data-identifier="true"
+                    data-visible="false">{{ lang._('ID') }}</th>
             </tr>
             </thead>
+
             <tbody>
             </tbody>
+
             <tfoot>
             <tr>
                 <td></td>
                 <td>
-                    <button data-action="add" type="button" class="btn btn-xs btn-default"><span class="fa fa-plus"></span></button>
-                    <button data-action="deleteSelected" type="button" class="btn btn-xs btn-default"><span class="fa fa-trash-o"></span></button>
+                    <button data-action="add" type="button" class="btn btn-xs btn-default">
+                        <span class="fa fa-plus"></span>
+                    </button>
+                    <button data-action="deleteSelected" type="button" class="btn btn-xs btn-default">
+                        <span class="fa fa-trash-o"></span>
+                    </button>
                 </td>
             </tr>
             </tfoot>
@@ -149,10 +161,13 @@ POSSIBILITY OF SUCH DAMAGE.
     </div>
     <div class="col-md-12">
         <hr/>
-        <button class="btn btn-primary"  id="reconfigureAct" type="button"><b>{{ lang._('Apply') }}</b> <i id="reconfigureAct_progress" class=""></i></button>
-	<br/><br/>
+        <button class="btn btn-primary" id="reconfigureAct" type="button">
+            <b>{{ lang._('Apply') }}</b> <i id="reconfigureAct_progress" class=""></i>
+        </button>
+        <br/>
+        <br/>
     </div>
 </div>
 
 {# include dialog #}
-{{ partial("layout_partials/base_dialog",['fields':formDialogEdit,'id':'DialogEdit','label':lang._('Edit job')])}}
+{{ partial("layout_partials/base_dialog",['fields':formDialogEdit,'id':'DialogEdit','label':lang._('Edit job')]) }}

@@ -30,11 +30,13 @@
 
 namespace OPNsense\Core;
 
+use OPNsense\Base\IndexController;
+
 /**
  * Class FirmwareController controller for firmware core actions
  * @package OPNsense\Core
  */
-class FirmwareController extends \OPNsense\Base\IndexController
+class FirmwareController extends IndexController
 {
     /**
      * return to / for non existent actions

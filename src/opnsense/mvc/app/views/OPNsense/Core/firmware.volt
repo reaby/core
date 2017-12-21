@@ -86,7 +86,7 @@ POSSIBILITY OF SUCH DAMAGE.
                 });
 
                 // display the current changelog if one was found
-                if ($.upgrade_show_log != '') {
+                if ($.upgrade_show_log !== '') {
                     changelog($.upgrade_show_log);
                 }
 

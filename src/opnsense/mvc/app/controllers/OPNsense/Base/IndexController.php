@@ -26,7 +26,10 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace OPNsense\Base;
+
+use Phalcon\Mvc\Dispatcher;
 
 /**
  * Class IndexController
@@ -45,6 +48,7 @@ class IndexController extends ControllerBase
     /**
      * log or send error message
      * @param string $message error message
+     * @param null   $sender
      * @return bool
      */
     public function handleErrorAction($message = null, $sender = null)
@@ -54,14 +58,16 @@ class IndexController extends ControllerBase
             $this->response->setStatusCode(400, "Bad Request");
             $this->response->setContentType('application/json', 'UTF-8');
             $this->response->setJsonContent(
-                array('message' => $message,
-                      'status'  => 400
-                )
+                [
+                    'message' => $message,
+                    'status' => 400,
+                ]
             );
         } else {
             $this->getLogger()->error($message);
             $this->response->redirect("/", true);
         }
+
         return false;
     }
 
@@ -69,8 +75,9 @@ class IndexController extends ControllerBase
      * before routing event
      * @param Dispatcher $dispatcher
      * @return null|bool
+     * @throws \Exception
      */
-    public function beforeExecuteRoute($dispatcher)
+    public function beforeExecuteRoute(Dispatcher $dispatcher)
     {
         parent::beforeExecuteRoute($dispatcher);
         // by default, don't allow our content to be rendered in an [i]frame from another location.

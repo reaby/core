@@ -41,10 +41,11 @@ class InterfaceController extends ApiControllerBase
     /**
      * collect interface names
      * @return array interface mapping (raw interface to description)
+     * @throws \OPNsense\Core\ConfigException
      */
     private function getInterfaceNames()
     {
-        $intfmap = array();
+        $intfmap = [];
         $config = Config::getInstance()->object();
         if ($config->interfaces->count() > 0) {
             foreach ($config->interfaces->children() as $key => $node) {
@@ -57,6 +58,7 @@ class InterfaceController extends ApiControllerBase
     /**
      * retrieve interface name mapping
      * @return array interface mapping (raw interface to description)
+     * @throws \OPNsense\Core\ConfigException
      */
     public function getInterfaceNamesAction()
     {
@@ -65,7 +67,8 @@ class InterfaceController extends ApiControllerBase
 
     /**
      * retrieve system arp table contents
-     * @return array
+     * @return array|null
+     * @throws \OPNsense\Core\ConfigException
      */
     public function getArpAction()
     {
@@ -90,7 +93,7 @@ class InterfaceController extends ApiControllerBase
 
     /**
      * retrieve system arp table contents
-     * @return array
+     * @return array|string
      */
     public function flushArpAction()
     {
@@ -105,7 +108,8 @@ class InterfaceController extends ApiControllerBase
 
     /**
      * retrieve system ndp table contents
-     * @return array
+     * @return array|null
+     * @throws \OPNsense\Core\ConfigException
      */
     public function getNdpAction()
     {
@@ -130,7 +134,8 @@ class InterfaceController extends ApiControllerBase
 
     /**
      * retrieve system routing table
-     * @return mixed
+     * @return array|null
+     * @throws \OPNsense\Core\ConfigException
      */
     public function getRoutesAction()
     {

@@ -30,8 +30,8 @@
 
 namespace OPNsense\Core;
 
-use \Phalcon\DI\FactoryDefault;
-use \Phalcon\Logger\Adapter\Syslog;
+use Phalcon\DI\FactoryDefault;
+use Phalcon\Logger\Adapter\Syslog;
 
 /**
  * Class Config provides access to systems config xml
@@ -48,7 +48,7 @@ class Config extends Singleton
 
     /**
      * SimpleXML type reference to config
-     * @var SimpleXML
+     * @var \SimpleXMLElement|null
      */
     private $simplexml = null;
 
@@ -87,7 +87,7 @@ class Config extends Singleton
     /**
      * serialize xml to array structure (backwards compatibility mode)
      * @param null|array $forceList force specific tags to be contained in a list.
-     * @param DOMNode $node
+     * @param \DOMNode   $node
      * @return string|array
      * @throws ConfigException
      */
@@ -157,21 +157,23 @@ class Config extends Singleton
 
 
     /**
-     * @param $filename
-     * @param null $forceList
+     * @param string       $filename
+     * @param null|boolean $forceList
      * @return array|string
+     * @throws ConfigException
      */
     public function toArrayFromFile($filename, $forceList = null)
     {
         $xml = $this->loadFromFile($filename);
+
         return $this->toArray($forceList, $xml);
     }
 
     /**
      * update (reset) config with array structure (backwards compatibility mode)
-     * @param $source source array structure
-     * @param null $node simplexml node
-     * @param null|string $parentTagName
+     * @param array                  $source source array structure
+     * @param \SimpleXMLElement|null $node   simplexml node
+     * @param null|string            $parentTagName
      * @throws ConfigException
      */
     public function fromArray($source, $node = null, $parentTagName = null)
@@ -222,7 +224,7 @@ class Config extends Singleton
         }
 
         // restore error handling on initial call
-        if ($node == $this->simplexml) {
+        if ($node === $this->simplexml) {
             restore_error_handler();
         }
     }
@@ -254,18 +256,20 @@ class Config extends Singleton
         $dom_sxe = $dom->importNode($configxml, true);
         $dom->appendChild($dom_sxe);
         $xpath = new \DOMXPath($dom);
-        return  $xpath->query($query);
+
+        return $xpath->query($query);
     }
 
 
     /**
      * object representation of xml document via simplexml, references the same underlying model
-     * @return SimpleXML
+     * @return \SimpleXMLElement
      * @throws ConfigException
      */
     public function object()
     {
         $this->checkvalid();
+
         return $this->simplexml;
     }
 
@@ -275,7 +279,7 @@ class Config extends Singleton
      */
     protected function init()
     {
-        $this->config_file = FactoryDefault::getDefault()->get('config')->globals->config_path . "config.xml";
+        $this->config_file = FactoryDefault::getDefault()->get('config')->globals->config_path."config.xml";
         try {
             $this->load();
         } catch (\Exception $e) {
@@ -443,15 +447,17 @@ class Config extends Singleton
         }
         // The new target backup filename shouldn't exists, because of the use of microtime.
         // But if for some reason a script keeps calling this backup very often, it shouldn't crash.
-        if (!file_exists($target_dir . $target_filename)) {
-            copy($this->config_file, $target_dir . $target_filename);
+        if (!file_exists($target_dir.$target_filename)) {
+            copy($this->config_file, $target_dir.$target_filename);
         }
     }
 
     /**
      * return list of config backups
+     *
      * @param bool $fetchRevisionInfo fetch revision information and return detailed information. (key/value)
      * @return array list of backups
+     * @throws ConfigException
      */
     public function getBackups($fetchRevisionInfo = false)
     {
@@ -463,7 +469,7 @@ class Config extends Singleton
             if (!$fetchRevisionInfo) {
                 return $backups;
             } else {
-                $result = array ();
+                $result = array();
                 foreach ($backups as $filename) {
                     // try to read backup info from xml
                     $xmlNode = @simplexml_load_file($filename, "SimpleXMLElement", LIBXML_NOERROR | LIBXML_ERR_NONE);
@@ -483,7 +489,7 @@ class Config extends Singleton
 
     /**
      * restore and load backup config
-     * @param $filename
+     * @param string $filename
      * @return bool  restored, valid config loaded
      * @throws ConfigException no config loaded
      */
@@ -497,18 +503,21 @@ class Config extends Singleton
                 // try to restore config
                 copy($filename, $this->config_file);
                 $this->load();
+
                 return true;
             } catch (ConfigException $e) {
                 // copy / load failed, restore previous version
                 $this->simplexml = $simplexml;
                 $this->statusIsValid = true;
                 $this->save(null, true);
+
                 return false;
             }
         } else {
             // we don't have a valid config loaded, just copy and load the requested one
             copy($filename, $this->config_file);
             $this->load();
+
             return true;
         }
     }
@@ -516,7 +525,7 @@ class Config extends Singleton
     /**
      * save config to filesystem
      * @param array|null $revision revision tag (associative array)
-     * @param bool $backup do not backup current config
+     * @param bool       $backup   do not backup current config
      * @throws ConfigException
      */
     public function save($revision = null, $backup = true)

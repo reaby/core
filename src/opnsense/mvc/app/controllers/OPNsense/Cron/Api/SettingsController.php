@@ -142,7 +142,7 @@ class SettingsController extends ApiControllerBase
 
     /**
      * delete job by uuid ( only if origin is cron)
-     * @param $uuid item unique id
+     * @param string $uuid item unique id
      * @return array status
      */
     public function delJobAction($uuid)

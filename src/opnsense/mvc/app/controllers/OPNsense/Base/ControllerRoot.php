@@ -28,10 +28,10 @@
 
 namespace OPNsense\Base;
 
-use OPNsense\Core\Config;
-use Phalcon\Mvc\Controller;
-use Phalcon\Logger\Adapter\Syslog;
 use OPNsense\Core\ACL;
+use OPNsense\Core\Config;
+use Phalcon\Logger\Adapter\Syslog;
+use Phalcon\Mvc\Controller;
 
 /**
  * Class ControllerRoot wrap shared OPNsense controller features (auth, logging)
@@ -72,7 +72,7 @@ class ControllerRoot extends Controller
             }
         }
 
-        $locale = $lang . '.UTF-8';
+        $locale = $lang.'.UTF-8';
         bind_textdomain_codeset('OPNsense', $locale);
         $this->translator = new ViewTranslator(array(
             'directory' => '/usr/local/share/locale',
@@ -90,7 +90,7 @@ class ControllerRoot extends Controller
     {
         $logger = new Syslog($ident, array(
             'option' => LOG_PID,
-            'facility' => LOG_LOCAL4
+            'facility' => LOG_LOCAL4,
         ));
 
         return $logger;
@@ -108,6 +108,7 @@ class ControllerRoot extends Controller
             $this->getLogger()->error("no active session, user not found");
             $this->response->redirect($redirect_uri, true);
             $this->setLang();
+
             return false;
         } elseif ($this->session->has("last_access")
             && $this->session->get("last_access") < (time() - 14400)) {
@@ -118,6 +119,7 @@ class ControllerRoot extends Controller
             $this->session->remove("last_access");
             $this->response->redirect($redirect_uri, true);
             $this->setLang();
+
             return false;
         }
 
@@ -131,6 +133,7 @@ class ControllerRoot extends Controller
             $this->getLogger()->error("uri ".$_SERVER['REQUEST_URI'].
                 " not accessible for user ".$this->session->get("Username"));
             $this->response->redirect("/", true);
+
             return false;
         }
 

@@ -30,11 +30,13 @@
 
 namespace OPNsense\Core;
 
+use OPNsense\Base\IndexController as BaseIndexController;
+
 /**
  * Class IndexController Index controller for core package
  * @package OPNsense\Core
  */
-class IndexController extends \OPNsense\Base\IndexController
+class IndexController extends BaseIndexController
 {
     /**
      * return to / for non existent actions

@@ -29,13 +29,12 @@
  */
 
 // Service definition for API
+use OPNsense\Core\Config;
+use OPNsense\Core\Routing;
 use Phalcon\DI\FactoryDefault;
 use Phalcon\Mvc\Url as UrlResolver;
 use Phalcon\Mvc\View;
-use Phalcon\Mvc\Model\Metadata\Memory as MetaDataAdapter;
 use Phalcon\Session\Adapter\Files as SessionAdapter;
-use OPNsense\Core\Config;
-use OPNsense\Core\Routing;
 
 /**
  * The FactoryDefault Dependency Injector automatically register the right services providing a full stack framework
@@ -46,6 +45,7 @@ $di->set('view', function () use ($config) {
     // return a empty view
     $view = new View();
     $view->disable();
+
     return $view;
 });
 
@@ -89,36 +89,47 @@ $di->set('router', function () {
 
     $routing = new Routing(__DIR__."/../controllers/", "api");
     $routing->getRouter()->handle();
+
     return $routing->getRouter();
 });
 
 // exception handling
 $di->get('eventsManager')->attach("dispatch:beforeException", function ($event, $dispatcher, $exception) {
+    /**
+     * @var \Exception              $exception
+     * @var \Phalcon\Mvc\Dispatcher $dispatcher
+     */
     switch ($exception->getCode()) {
         case Phalcon\Dispatcher::EXCEPTION_HANDLER_NOT_FOUND:
             // send to error action on default index controller
-            $dispatcher->forward(array(
-                'controller' => 'index',
-                'namespace' => '\OPNsense\Base',
-                'action' => 'handleError',
-                'params'     => array(
-                    'message' =>  'controller ' . $dispatcher->getControllerClass() . ' not found',
-                    'sender' => 'API'
-                )
-            ));
+            $dispatcher->forward(
+                [
+                    'controller' => 'index',
+                    'namespace' => '\OPNsense\Base',
+                    'action' => 'handleError',
+                    'params' => [
+                        'message' => 'controller '.$dispatcher->getControllerClass().' not found',
+                        'sender' => 'API',
+                    ],
+                ]
+            );
+
             return false;
         case Phalcon\Dispatcher::EXCEPTION_ACTION_NOT_FOUND:
             // send to error action on default index controller
-            $dispatcher->forward(array(
-                'controller' => 'index',
-                'namespace' => '\OPNsense\Base',
-                'action' => 'handleError',
-                'params'     => array(
-                    'message' => 'action ' . $dispatcher->getActionName() . ' not found',
-                    'sender' => 'API'
-                )
-            ));
+            $dispatcher->forward(
+                [
+                    'controller' => 'index',
+                    'namespace' => '\OPNsense\Base',
+                    'action' => 'handleError',
+                    'params' => [
+                        'message' => 'action '.$dispatcher->getActionName().' not found',
+                        'sender' => 'API',
+                    ],
+                ]);
+
             return false;
     }
 });
+
 $di->get('dispatcher')->setEventsManager($di->get('eventsManager'));

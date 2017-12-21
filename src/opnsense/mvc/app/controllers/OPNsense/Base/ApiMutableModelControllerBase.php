@@ -27,15 +27,17 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace OPNsense\Base;
 
-use \OPNsense\Core\Config;
+use Error;
+use OPNsense\Core\Config;
 
 /**
  * Class ApiMutableModelControllerBase, inherit this class to implement
  * an API that exposes a model with get and set actions.
  * You need to implement a method to create new blank model
- * objecs (newModelObject) as well as a method to return
+ * objects (newModelObject) as well as a method to return
  * the name of the model.
  * @package OPNsense\Base
  */
@@ -58,7 +60,7 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
 
     /**
      * validate on initialization
-     * @throws Exception
+     * @throws \Exception
      */
     public function initialize()
     {
@@ -82,6 +84,7 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
         if ($this->request->isGet()) {
             $result[static::$internalModelName] = $this->getModelNodes();
         }
+
         return $result;
     }
 
@@ -110,7 +113,7 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
      * validate and save model after update or insertion.
      * Use the reference node and tag to rename validation output for a specific node to a new offset, which makes
      * it easier to reference specific uuids without having to use them in the frontend descriptions.
-     * @param $node reference node, to use as relative offset
+     * @param $node   reference node, to use as relative offset
      * @param $prefix prefix to use when $node is provided (defaults to static::$internalModelName)
      * @return array result / validation output
      */
@@ -120,18 +123,19 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
         if (empty($result['result'])) {
             return $this->save();
         }
+
         return $result;
     }
 
     /**
      * validate this model
-     * @param $node reference node, to use as relative offset
+     * @param $node   reference node, to use as relative offset
      * @param $prefix prefix to use when $node is provided (defaults to static::$internalModelName)
      * @return array result / validation output
      */
     protected function validate($node = null, $prefix = null)
     {
-        $result = array("result"=>"");
+        $result = array("result" => "");
         $resultPrefix = empty($prefix) ? static::$internalModelName : $prefix;
         // perform validation
         $valMsgs = $this->getModel()->performValidation();
@@ -148,18 +152,21 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
                 $result["validations"][$resultPrefix.".".$msg->getField()] = $msg->getMessage();
             }
         }
+
         return $result;
     }
 
     /**
      * save model after update or insertion, validate() first to avoid raising exceptions
      * @return array result / validation output
+     * @throws \Phalcon\Validation\Exception
      */
     protected function save()
     {
         $this->getModel()->serializeToConfig();
         Config::getInstance()->save();
-        return array("result"=>"saved");
+
+        return array("result" => "saved");
     }
 
     /**
@@ -167,7 +174,7 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
      * setAction is called. This hook is called after a model has been
      * constructed and validated but before it serialized to the configuration
      * and written to disk
-     * @return Error message on error, or null/void on success
+     * @return void|null|Error    message on error, or null/void on success
      */
     protected function setActionHook()
     {
@@ -176,10 +183,11 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
     /**
      * update model settings
      * @return array status / validation errors
+     * @throws \Phalcon\Validation\Exception
      */
     public function setAction()
     {
-        $result = array("result"=>"failed");
+        $result = array("result" => "failed");
         if ($this->request->isPost()) {
             // load model and update with provided data
             $mdl = $this->getModel();
@@ -194,6 +202,7 @@ abstract class ApiMutableModelControllerBase extends ApiControllerBase
                 }
             }
         }
+
         return $result;
     }
 }

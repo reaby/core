@@ -30,8 +30,8 @@
 
 namespace OPNsense\Diagnostics\Api;
 
-use \OPNsense\Base\ApiControllerBase;
-use \OPNsense\Core\Backend;
+use OPNsense\Base\ApiControllerBase;
+use OPNsense\Core\Backend;
 
 /**
  * Class ActivityController
@@ -41,14 +41,13 @@ class ActivityController extends ApiControllerBase
 {
     /**
      * retrieve system activity (top)
-     * @return array
+     * @return array|null
      */
     public function getActivityAction()
     {
         $backend = new Backend();
         $response = $backend->configdpRun("system diag activity json");
-        $activity = json_decode($response, true);
 
-        return $activity;
+        return json_decode($response, true);
     }
 }

@@ -28,9 +28,9 @@
 
 namespace OPNsense\Diagnostics\Api;
 
-use \OPNsense\Base\ApiControllerBase;
-use \OPNsense\Core\Backend;
-use \OPNsense\Core\Config;
+use OPNsense\Base\ApiControllerBase;
+use OPNsense\Core\Backend;
+use OPNsense\Core\Config;
 
 /**
  * Class ServiceController
@@ -46,7 +46,7 @@ class SystemhealthController extends ApiControllerBase
      */
     private function getDataSetInfo($xml)
     {
-        $info = array();
+        $info = [];
         if (isset($xml)) {
             $step = intval($xml->step);
             $lastUpdate = intval($xml->lastupdate);
@@ -68,11 +68,12 @@ class SystemhealthController extends ApiControllerBase
                     "available_rows" => ($this->countRows($value) - $firstValue_rowNumber),
                     "full_step" => ($step * (int)$value->pdp_per_row),
                     "recorded_time" => ($step * (int)$value->pdp_per_row) *
-                        ($this->countRows($value) - $firstValue_rowNumber)
+                        ($this->countRows($value) - $firstValue_rowNumber),
                 ]);
             }
         }
-        return ($info);
+
+        return $info;
     }
 
     /**
@@ -118,10 +119,10 @@ class SystemhealthController extends ApiControllerBase
 
     /**
      * internal: retrieve selections within range (0-0=full range) and limit number of datapoints (max_values)
-     * @param array $rra_info dataset information
-     * @param int $from_timestamp from
-     * @param int $to_timestamp to
-     * @param int $max_values approx. max number of values
+     * @param array $rra_info       dataset information
+     * @param int   $from_timestamp from
+     * @param int   $to_timestamp   to
+     * @param int   $max_values     approx. max number of values
      * @return array
      */
     private function getSelection($rra_info, $from_timestamp, $to_timestamp, $max_values)
@@ -132,9 +133,9 @@ class SystemhealthController extends ApiControllerBase
             $from_timestamp = $this->getMaxRange($rra_info)["oldest_timestamp"];
             $to_timestamp = $this->getMaxRange($rra_info)["newest_timestamp"];
         }
-        $max_values = ($max_values <=0) ? 1 : $max_values;
+        $max_values = ($max_values <= 0) ? 1 : $max_values;
 
-        $archives = array();
+        $archives = [];
         // find archive match
         foreach ($rra_info as $key => $value) {
             if ($from_timestamp >= $value['firstValue_timestamp'] && $to_timestamp <= ($value['last_timestamp'] +
@@ -163,7 +164,7 @@ class SystemhealthController extends ApiControllerBase
                         "key" => $key,
                         "condensed_rowCount" => $condensed_rowCount,
                         "condense_by" => (int)$condense_factor,
-                        "type" => "detail"
+                        "type" => "detail",
                     ]);
                 } else { // add condensed detail
                     array_push($archives, [
@@ -172,7 +173,7 @@ class SystemhealthController extends ApiControllerBase
                                 $value["pdp_per_row"])),
                         "condense_by" => (int)$condense_factor * ($rra_info[$last_rra_key]["pdp_per_row"] /
                                 $value["pdp_per_row"]),
-                        "type" => "detail"
+                        "type" => "detail",
                     ]);
                 }
                 // search for last dataSet with actual values, used to exclude sets that do not contain data
@@ -193,7 +194,7 @@ class SystemhealthController extends ApiControllerBase
                     "key" => $last_rra_key,
                     "condensed_rowCount" => $condensed_rowCount,
                     "condense_by" => (int)$overview,
-                    "type" => "overview"
+                    "type" => "overview",
                 ]);
                 break;
             }
@@ -232,14 +233,14 @@ class SystemhealthController extends ApiControllerBase
 
     /**
      * translate rrd data to usable format for d3 charts
-     * @param array $data
+     * @param array   $data
      * @param boolean $applyInverse inverse selection (multiply -1)
-     * @param array $field_units mapping for descriptive field names
+     * @param array   $field_units  mapping for descriptive field names
      * @return array
      */
     private function translateD3($data, $applyInverse, $field_units)
     {
-        $d3_data = array();
+        $d3_data = [];
         $from_timestamp = 0;
         $to_timestamp = 0;
 
@@ -252,7 +253,7 @@ class SystemhealthController extends ApiControllerBase
                     $d3_data[$key] = [];
                     $d3_data[$key]["area"] = true;
                     if (isset($field_units[$name])) {
-                        $d3_data[$key]["key"] = $name . " " . $field_units[$name];
+                        $d3_data[$key]["key"] = $name." ".$field_units[$name];
                     } else {
                         $d3_data[$key]["key"] = $name;
                     }
@@ -305,14 +306,15 @@ class SystemhealthController extends ApiControllerBase
             "from_timestamp" => $from_timestamp,
             "to_timestamp" => $to_timestamp,
             "count" => isset($d3_data[0]) ? count($d3_data[0]['values']) : 0,
-            "data" => $d3_data
+            "data" => $d3_data,
         ];
     }
 
     /**
      * retrieve rrd data
-     * @param array $xml
-     * @param array $selection
+     * @param \SimpleXMLElement $xml
+     * @param array             $selection
+     *
      * @return array
      */
     private function getCondensedArchive($xml, $selection)
@@ -320,8 +322,8 @@ class SystemhealthController extends ApiControllerBase
         $key_counter = 0;
         $info = $this->getDataSetInfo($xml);
         $count_values = 0;
-        $condensed_row_values = array();
-        $condensed_archive = array();
+        $condensed_row_values = [];
+        $condensed_archive = [];
         $condensed_step = 0;
         $skip_nan = false;
         $selected_archives = $selection["data"];
@@ -411,7 +413,7 @@ class SystemhealthController extends ApiControllerBase
                                             array_push($condensed_archive, [
                                                 "timestamp" => $timestamp - ($info[$key_counter]['step'] *
                                                         $info[$key_counter]['pdp_per_row']),
-                                                "condensed_values" => $condensed_row_values[$count_values]
+                                                "condensed_values" => $condensed_row_values[$count_values],
                                             ]);
                                         }
                                         $count_values++;
@@ -429,7 +431,7 @@ class SystemhealthController extends ApiControllerBase
         }
 
         // get value information to include in set
-        $column_data = array();
+        $column_data = [];
         foreach ($xml->ds as $key => $value) {
             array_push($column_data, ["name" => trim($value->name), "type" => trim($value->type)]);
         }
@@ -456,17 +458,18 @@ class SystemhealthController extends ApiControllerBase
     private function getRRDdetails($rrd)
     {
         # Source of data: xml fields of corresponding .xml metadata
-        $result = array();
+        $result = [];
         $backend = new Backend();
         $response = $backend->configdpRun("systemhealth list");
         $healthList = json_decode($response, true);
         // search by topic and name, return array with filename
         if (is_array($healthList)) {
             foreach ($healthList as $filename => $healthItem) {
-                if ($healthItem['itemName'] .'-' . $healthItem['topic'] == $rrd) {
+                if ($healthItem['itemName'].'-'.$healthItem['topic'] == $rrd) {
                     $result["result"] = "ok";
                     $healthItem['filename'] = $filename;
                     $result["data"] = $healthItem;
+
                     return $result;
                 }
             }
@@ -474,7 +477,14 @@ class SystemhealthController extends ApiControllerBase
 
         // always return a valid (empty) data set
         $result["result"] = "not found";
-        $result["data"] = ["title"=>"","y-axis_label"=>"","field_units"=>[], "itemName" => "", "filename" => ""];
+        $result["data"] = [
+            "title" => "",
+            "y-axis_label" => "",
+            "field_units" => [],
+            "itemName" => "",
+            "filename" => "",
+        ];
+
         return $result;
     }
 
@@ -486,16 +496,16 @@ class SystemhealthController extends ApiControllerBase
     public function getRRDlistAction()
     {
         # Source of data: filelisting of /var/db/rrd/*.rrd
-        $result = array();
+        $result = [];
         $backend = new Backend();
         $response = $backend->configdpRun("systemhealth list");
         $healthList = json_decode($response, true);
 
-        $result['data'] = array();
+        $result['data'] = [];
         if (is_array($healthList)) {
             foreach ($healthList as $healthItem => $details) {
                 if (!array_key_exists($details['topic'], $result['data'])) {
-                    $result['data'][$details['topic']] = array();
+                    $result['data'][$details['topic']] = [];
                 }
                 $result['data'][$details['topic']][] = $details['itemName'];
             }
@@ -509,12 +519,12 @@ class SystemhealthController extends ApiControllerBase
 
     /**
      * retrieve SystemHealth Data (previously called RRD Graphs)
-     * @param string $rrd
-     * @param int $from
-     * @param int $to
-     * @param int $max_values
-     * @param bool $inverse
-     * @param int $detail
+     * @param string      $rrd        rrd filename without extension
+     * @param int         $from       from timestamp (0=min)
+     * @param int         $to         o timestamp (0=max)
+     * @param int         $max_values limit datapoint as close as possible to this number (or twice if detail (zoom) + overview )
+     * @param bool|string $inverse    Inverse every odd row (multiply by -1)
+     * @param int         $detail     limits processing of dataSets to max given (-1 = all ; 1 = 0,1 ; 2 = 0,1,2 ; etc)
      * @return array
      */
     public function getSystemHealthAction(
@@ -525,16 +535,8 @@ class SystemhealthController extends ApiControllerBase
         $inverse = false,
         $detail = -1
     ) {
-        /**
-         * $rrd = rrd filename without extension
-         * $from = from timestamp (0=min)
-         * $to = to timestamp (0=max)
-         * $max_values = limit datapoint as close as possible to this number (or twice if detail (zoom) + overview )
-         * $inverse = Inverse every odd row (multiply by -1)
-         * $detail = limits processing of dataSets to max given (-1 = all ; 1 = 0,1 ; 2 = 0,1,2 ; etc)
-         */
 
-        $rrd_details=$this->getRRDdetails($rrd)["data"];
+        $rrd_details = $this->getRRDdetails($rrd)["data"];
         $xml = false;
         if ($rrd_details['filename'] != "") {
             $backend = new Backend();
@@ -546,7 +548,7 @@ class SystemhealthController extends ApiControllerBase
 
         if ($xml !== false) {
             // we only use the average databases in any RRD, remove the rest to avoid strange behaviour.
-            for ($count = count($xml->rra) -1; $count >= 0; $count--) {
+            for ($count = count($xml->rra) - 1; $count >= 0; $count--) {
                 if (trim((string)$xml->rra[$count]->cf) != "AVERAGE") {
                     unset($xml->rra[$count]);
                 }
@@ -576,12 +578,13 @@ class SystemhealthController extends ApiControllerBase
                 $rrd_details["field_units"]
             );
 
-            return ["sets" => $data_sets_full,
+            return [
+                "sets" => $data_sets_full,
                 "d3" => $result,
-                "title"=>$rrd_details["title"] != "" ?
-                         $rrd_details["title"] . " | " . ucfirst($rrd_details['itemName']) :
-                         ucfirst($rrd_details['itemName']),
-                "y-axis_label"=>$rrd_details["y-axis_label"]
+                "title" => $rrd_details["title"] != "" ?
+                    $rrd_details["title"]." | ".ucfirst($rrd_details['itemName']) :
+                    ucfirst($rrd_details['itemName']),
+                "y-axis_label" => $rrd_details["y-axis_label"],
             ]; // return details and d3 data
         } else {
             return ["sets" => [], "d3" => [], "title" => "error", "y-axis_label" => ""];
@@ -591,17 +594,19 @@ class SystemhealthController extends ApiControllerBase
     /**
      * Retrieve network interfaces by key (lan, wan, opt1,..)
      * @return array
+     * @throws \OPNsense\Core\ConfigException
      */
     public function getInterfacesAction()
     {
         // collect interface names
-        $intfmap = array();
+        $intfmap = [];
         $config = Config::getInstance()->object();
         if ($config->interfaces->count() > 0) {
             foreach ($config->interfaces->children() as $key => $node) {
                 $intfmap[(string)$key] = array("descr" => !empty((string)$node->descr) ? (string)$node->descr : $key);
             }
         }
+
         return $intfmap;
     }
 }

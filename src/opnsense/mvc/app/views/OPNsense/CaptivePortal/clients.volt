@@ -29,20 +29,20 @@ POSSIBILITY OF SUCH DAMAGE.
 
 <script type="text/javascript">
 
-    $( document ).ready(function() {
+    $(document).ready(function () {
         /**
          * update zone list
          */
         function updateZones() {
-            ajaxGet(url="/api/captiveportal/session/zones/", sendData={}, callback=function(data, status) {
-                if (status == "success") {
+            ajaxGet(url = "/api/captiveportal/session/zones/", sendData = {}, callback = function (data, status) {
+                if (status === "success") {
                     $('#cp-zones').html("");
-                    $.each(data, function(key, value) {
+                    $.each(data, function (key, value) {
                         $('#cp-zones').append($("<option></option>").attr("value", key).text(value));
                     });
                     $('.selectpicker').selectpicker('refresh');
                     // link on change event
-                    $('#cp-zones').on('change', function(){
+                    $('#cp-zones').on('change', function () {
                         loadSessions();
                     });
                     // initial load sessions
@@ -62,22 +62,26 @@ POSSIBILITY OF SUCH DAMAGE.
                 multiSelect: true,
                 formatters: {
                     "commands": function (column, row) {
-                        return  "<button type=\"button\" class=\"btn btn-xs btn-default command-disconnect\" data-row-id=\"" + row.sessionid + "\"><span class=\"fa fa-trash-o\"></span></button>";
+                        return "<button type=\"button\" class=\"btn btn-xs btn-default command-disconnect\" data-row-id=\"" + row.sessionid + "\"><span class=\"fa fa-trash-o\"></span></button>";
                     }
                 },
                 converters: {
                     // convert datetime type fields from unix timestamp to readable format
                     datetime: {
-                        from: function (value) { return moment(parseInt(value)*1000); },
-                        to: function (value) { return value.format("lll"); }
+                        from: function (value) {
+                            return moment(parseInt(value) * 1000);
+                        },
+                        to: function (value) {
+                            return value.format("lll");
+                        }
                     }
                 }
             };
             $("#grid-clients").bootgrid('destroy');
-            ajaxGet(url="/api/captiveportal/session/list/"+zoneid+"/", sendData={}, callback=function(data, status) {
-                if (status == "success") {
+            ajaxGet(url = "/api/captiveportal/session/list/" + zoneid + "/", sendData = {}, callback = function (data, status) {
+                if (status === "success") {
                     $("#grid-clients > tbody").html('');
-                    $.each(data, function(key, value) {
+                    $.each(data, function (key, value) {
                         var fields = ["sessionId", "userName", "macAddress", "ipAddress", "startTime"];
                         tr_str = '<tr>';
                         for (var i = 0; i < fields.length; i++) {
@@ -92,18 +96,18 @@ POSSIBILITY OF SUCH DAMAGE.
                     });
                     // hook disconnect button
                     var grid_clients = $("#grid-clients").bootgrid(gridopt);
-                    grid_clients.on("loaded.rs.jquery.bootgrid", function(){
-                        grid_clients.find(".command-disconnect").on("click", function(e) {
-                            var sessionId=$(this).data("row-id");
+                    grid_clients.on("loaded.rs.jquery.bootgrid", function () {
+                        grid_clients.find(".command-disconnect").on("click", function (e) {
+                            var sessionId = $(this).data("row-id");
                             stdDialogConfirm('{{ lang._('Confirm disconnect') }}',
                                 '{{ lang._('Do you want to disconnect the selected client?') }}',
                                 '{{ lang._('Yes') }}', '{{ lang._('Cancel') }}', function () {
-                                ajaxCall(url="/api/captiveportal/session/disconnect/" + zoneid + '/',
-                                        sendData={'sessionId': sessionId}, callback=function(data,status){
+                                    ajaxCall(url = "/api/captiveportal/session/disconnect/" + zoneid + '/',
+                                        sendData = {'sessionId': sessionId}, callback = function (data, status) {
                                             // reload grid after delete
                                             loadSessions();
                                         });
-                            });
+                                });
                         });
                     });
                     // hide actionBar on mobile
@@ -127,22 +131,28 @@ POSSIBILITY OF SUCH DAMAGE.
                 </div>
             </div>
             <div>
-            <table id="grid-clients" class="table table-condensed table-hover table-striped table-responsive">
-                <thead>
-                <tr>
-                    <th data-column-id="sessionid" data-type="string" data-identifier="true" data-visible="false">{{ lang._('Session') }}</th>
-                    <th data-column-id="userName" data-type="string">{{ lang._('Username') }}</th>
-                    <th data-column-id="macAddress" data-type="string" data-css-class="hidden-xs hidden-sm" data-header-css-class="hidden-xs hidden-sm">{{ lang._('MAC address') }}</th>
-                    <th data-column-id="ipAddress" data-type="string" data-css-class="hidden-xs hidden-sm" data-header-css-class="hidden-xs hidden-sm">{{ lang._('IP address') }}</th>
-                    <th data-column-id="startTime" data-type="datetime">{{ lang._('Connected since') }}</th>
-                    <th data-column-id="commands" data-width="7em" data-formatter="commands" data-sortable="false">{{ lang._('Commands') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-                <tfoot>
-                </tfoot>
-            </table>
+                <table id="grid-clients" class="table table-condensed table-hover table-striped table-responsive">
+                    <thead>
+                    <tr>
+                        <th data-column-id="sessionid" data-type="string" data-identifier="true"
+                            data-visible="false">{{ lang._('Session') }}</th>
+                        <th data-column-id="userName" data-type="string">{{ lang._('Username') }}</th>
+                        <th data-column-id="macAddress" data-type="string" data-css-class="hidden-xs hidden-sm"
+                            data-header-css-class="hidden-xs hidden-sm">{{ lang._('MAC address') }}</th>
+                        <th data-column-id="ipAddress" data-type="string" data-css-class="hidden-xs hidden-sm"
+                            data-header-css-class="hidden-xs hidden-sm">{{ lang._('IP address') }}</th>
+                        <th data-column-id="startTime" data-type="datetime">{{ lang._('Connected since') }}</th>
+                        <th data-column-id="commands" data-width="7em" data-formatter="commands"
+                            data-sortable="false">{{ lang._('Commands') }}</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    </tbody>
+
+                    <tfoot>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>

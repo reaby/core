@@ -40,7 +40,7 @@ class FirewallController extends ApiControllerBase
 
     /**
      * retrieve firewall log
-     * @return array
+     * @return array|null
      */
     public function logAction()
     {

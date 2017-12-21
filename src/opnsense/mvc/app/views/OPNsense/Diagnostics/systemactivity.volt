@@ -42,7 +42,7 @@ POSSIBILITY OF SUCH DAMAGE.
             $("#grid-top").bootgrid('destroy');
             ajaxGet(url = "/api/diagnostics/activity/getActivity",
                     sendData = {}, callback = function (data, status) {
-                        if (status == "success") {
+                        if (status === "success") {
                             $("#grid-top > tbody").html('');
                             $.each(data['details'], function (key, value) {
                                 var fields = ["PID", "USERNAME", "PRI", "NICE", "SIZE", "RES", "STATE", "C", "TIME", "WCPU", "COMMAND"];

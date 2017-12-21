@@ -1,13 +1,13 @@
 <?php
 
-use Phalcon\DI\FactoryDefault;
-use Phalcon\Mvc\View;
-use Phalcon\Mvc\Url as UrlResolver;
-use Phalcon\Mvc\View\Engine\Volt as VoltEngine;
-use Phalcon\Mvc\Model\Metadata\Memory as MetaDataAdapter;
-use Phalcon\Session\Adapter\Files as SessionAdapter;
 use OPNsense\Core\Config;
 use OPNsense\Core\Routing;
+use Phalcon\DI\FactoryDefault;
+use Phalcon\Mvc\Model\Metadata\Memory as MetaDataAdapter;
+use Phalcon\Mvc\Url as UrlResolver;
+use Phalcon\Mvc\View;
+use Phalcon\Mvc\View\Engine\Volt as VoltEngine;
+use Phalcon\Session\Adapter\Files as SessionAdapter;
 
 /**
  * The FactoryDefault Dependency Injector automatically register the right services providing a full stack framework
@@ -40,18 +40,19 @@ $di->set('view', function () use ($config) {
 
             $volt->setOptions(array(
                 'compiledPath' => $config->application->cacheDir,
-                'compiledSeparator' => '_'
+                'compiledSeparator' => '_',
             ));
             // register additional volt template functions
             $volt->getCompiler()->addFunction('javascript_include_when_exists', function ($local_url) {
                 $chk_path = "str_replace('/ui/','/usr/local/opnsense/www/',".$local_url.")";
                 $js_tag = "'<script type=\"text/javascript\" src=\"'.$local_url.'\"></script>'";
+
                 return "file_exists(".$chk_path.") ? ".$js_tag." :''";
             });
 
             return $volt;
         },
-        '.phtml' => 'Phalcon\Mvc\View\Engine\Php'
+        '.phtml' => 'Phalcon\Mvc\View\Engine\Php',
     ));
 
     return $view;
@@ -72,8 +73,9 @@ $di->setShared('session', function () {
     $session->start();
     // Set session response cookie, unfortunalty we need to read the config here to determine if secure option is
     // a valid choice.
-    $cnf = Config::getInstance();
-    if ((string)$cnf->object()->system->webgui->protocol == 'https') {
+
+    $protocol = (string)Config::getInstance()->object()->system->webgui->protocol;
+    if ($protocol === 'https') {
         $secure = true;
     } else {
         $secure = false;
@@ -94,5 +96,6 @@ $di->set('router', function () {
 
     $routing = new Routing(__DIR__."/../controllers/", "ui");
     $routing->getRouter()->handle();
+
     return $routing->getRouter();
 });

@@ -63,7 +63,7 @@ POSSIBILITY OF SUCH DAMAGE.
             // scale footer on resize
             $(this).find("tfoot td:first-child").attr('colspan',$(this).find("th").length - 1);
             $(this).find('tr[data-row-id]').each(function(){
-                if ($(this).find('[class*="command-toggle"]').first().data("value") == "0") {
+                if ($(this).find('[class*="command-toggle"]').first().data("value") === "0") {
                     $(this).addClass("text-muted");
                 }
             });
@@ -126,7 +126,7 @@ POSSIBILITY OF SUCH DAMAGE.
                 // when done, disable progress animation.
                 $("#reconfigureAct_progress").removeClass("fa fa-spinner fa-pulse");
 
-                if (status != "success" || data['status'] != 'ok') {
+                if (status !== "success" || data['status'] !== 'ok') {
                     BootstrapDialog.show({
                         type: BootstrapDialog.TYPE_WARNING,
                         title: "{{ lang._('Error reconfiguring captiveportal') }}",
@@ -153,12 +153,12 @@ POSSIBILITY OF SUCH DAMAGE.
         });
         $("#act_upload").click(function() {
             var requestData = {'name' : $("#templateName").val(), 'content': $("#base64text_upload").val()};
-            if ($("#templateUUID").val() != "") {
+            if ($("#templateUUID").val() !== "") {
                 requestData['uuid'] = $("#templateUUID").val();
             }
             // save file content to server
             ajaxCall(url="/api/captiveportal/service/saveTemplate", sendData=requestData, callback=function(data,status) {
-                if (data['error'] == undefined) {
+                if (data['error'] === undefined) {
                     // saved, flush form data and hide modal
                     $("#grid-templates").bootgrid("reload");
                     $("#DialogTemplate").modal('hide');

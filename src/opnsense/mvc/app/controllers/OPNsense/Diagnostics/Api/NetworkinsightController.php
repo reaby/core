@@ -31,11 +31,10 @@
 
 namespace OPNsense\Diagnostics\Api;
 
-use \OPNsense\Base\ApiControllerBase;
-use \OPNsense\Diagnostics\Netflow;
-use \OPNsense\Core\Config;
-use \OPNsense\Core\Backend;
-use \Phalcon\Filter;
+use OPNsense\Base\ApiControllerBase;
+use OPNsense\Core\Backend;
+use OPNsense\Core\Config;
+use Phalcon\Filter;
 
 /**
  * Class NetworkinsightController
@@ -45,12 +44,13 @@ class NetworkinsightController extends ApiControllerBase
 {
     /**
      * request timeserie data to use for reporting
-     * @param string $provider provider class name
-     * @param string $measure measure [octets, packets, octets_ps, packets_ps]
-     * @param string $from_date from timestamp
-     * @param string $to_date to timestamp
+     * @param string $provider   provider class name
+     * @param string $measure    measure [octets, packets, octets_ps, packets_ps]
+     * @param string $from_date  from timestamp
+     * @param string $to_date    to timestamp
      * @param string $resolution resolution in seconds
-     * @param string $field field name to aggregate
+     * @param string $field      field name to aggregate
+     * @param null   $emulation
      * @return array timeseries
      */
     public function timeserieAction(
@@ -71,7 +71,7 @@ class NetworkinsightController extends ApiControllerBase
         $resolution = $filter->sanitize($resolution, "int");
         $field = $filter->sanitize($field, "string");
 
-        $result = array();
+        $result = [];
         if ($this->request->isGet()) {
             $backend = new Backend();
             // request current data
@@ -83,14 +83,15 @@ class NetworkinsightController extends ApiControllerBase
             //    "netflow aggregate fetch {$provider} {$from_date} {$to_date} {$resolution} {$field} " .
             //    "em0,in~em0,out~em1,in~em1,out~em2,in~em2,out~em3,in~em3,out"
             //);
+
             $graph_data = json_decode($response, true);
-            if ($graph_data != null) {
+            if (is_array($graph_data)) {
                 ksort($graph_data);
-                $timeseries = array();
+                $timeseries = [];
                 foreach ($graph_data as $timeserie => $timeserie_data) {
                     foreach ($timeserie_data as $timeserie_key => $payload) {
                         if (!isset($timeseries[$timeserie_key])) {
-                            $timeseries[$timeserie_key] = array();
+                            $timeseries[$timeserie_key] = [];
                         }
                         // measure value
                         $measure_val = 0;
@@ -106,25 +107,27 @@ class NetworkinsightController extends ApiControllerBase
                             $measure_val = $payload['packets'] / $payload['resolution'];
                         }
                         // add to timeseries
-                        $timeseries[$timeserie_key][] = array((int)$timeserie*1000, $measure_val);
+                        $timeseries[$timeserie_key][] = [(int)$timeserie * 1000, $measure_val];
                     }
                 }
                 foreach ($timeseries as $timeserie_key => $data) {
-                    $result[] = array("key" => $timeserie_key, "values" => $data);
+                    $result[] = ["key" => $timeserie_key, "values" => $data];
                 }
             }
         }
+
         return $result;
     }
 
     /**
      * request top usage data (for reporting), values can optionally be filtered using filter_field and filter_value
-     * @param string $provider provider class name
+     *
+     * @param string $provider  provider class name
      * @param string $from_date from timestamp
-     * @param string $to_date to timestamp
-     * @param string $field field name(s) to aggregate
-     * @param string $measure measure [octets, packets]
-     * @param string $max_hits maximum number of results
+     * @param string $to_date   to timestamp
+     * @param string $field     field name(s) to aggregate
+     * @param string $measure   measure [octets, packets]
+     * @param string $max_hits  maximum number of results
      * @return array timeseries
      */
     public function topAction(
@@ -144,14 +147,13 @@ class NetworkinsightController extends ApiControllerBase
         $measure = $filter->sanitize($measure, "string");
         $max_hits = $filter->sanitize($max_hits, "int");
 
-        $result = array();
         if ($this->request->isGet()) {
             if ($this->request->get("filter_field") != null && $this->request->get("filter_value") != null) {
                 $filter_fields = explode(',', $this->request->get("filter_field"));
                 $filter_values = explode(',', $this->request->get("filter_value"));
-                $data_filter="";
+                $data_filter = "";
                 foreach ($filter_fields as $field_indx => $filter_field) {
-                    if ($data_filter != '') {
+                    if ($data_filter !== '') {
                         $data_filter .= ',';
                     }
                     if (isset($filter_values[$field_indx])) {
@@ -168,11 +170,14 @@ class NetworkinsightController extends ApiControllerBase
             $configd_cmd .= " {$measure} {$data_filter} {$max_hits}";
             $response = $backend->configdRun($configd_cmd);
             $graph_data = json_decode($response, true);
-            if ($graph_data != null) {
+            if ($graph_data !== null) {
                 return $graph_data;
             }
+
+            return [];
         }
-        return array();
+
+        return [];
     }
 
     /**
@@ -186,34 +191,40 @@ class NetworkinsightController extends ApiControllerBase
             $configd_cmd = "netflow aggregate metadata json";
             $response = $backend->configdRun($configd_cmd);
             $metadata = json_decode($response, true);
-            if ($metadata != null) {
+            if ($metadata !== null) {
                 return $metadata;
             }
+
+            return [];
         }
-        return array();
+
+        return [];
     }
 
     /**
      * return interface map (device / name)
      * @return array interfaces
+     * @throws \OPNsense\Core\ConfigException
      */
     public function getInterfacesAction()
     {
         // map physical interfaces to description / name
         $configObj = Config::getInstance()->object();
-        $allInterfaces = array();
+        $allInterfaces = [];
         foreach ($configObj->interfaces->children() as $key => $intf) {
             $allInterfaces[(string)$intf->if] = empty($intf->descr) ? $key : (string)$intf->descr;
         }
+
         return $allInterfaces;
     }
 
     /**
      * return known protocols
+     * @return array
      */
     public function getProtocolsAction()
     {
-        $result = array();
+        $result = [];
         foreach (explode("\n", file_get_contents('/etc/protocols')) as $line) {
             if (strlen($line) > 1 && $line[0] != '#') {
                 $parts = preg_split('/\s+/', $line);
@@ -222,15 +233,17 @@ class NetworkinsightController extends ApiControllerBase
                 }
             }
         }
+
         return $result;
     }
 
     /**
      * return known services
+     * @return array
      */
     public function getServicesAction()
     {
-        $result = array();
+        $result = [];
         foreach (explode("\n", file_get_contents('/etc/services')) as $line) {
             if (strlen($line) > 1 && $line[0] != '#') {
                 // there a few ports which have different names for different protocols, but to not overcomplicate
@@ -242,15 +255,17 @@ class NetworkinsightController extends ApiControllerBase
                 }
             }
         }
+
         return $result;
     }
 
     /**
      * request timeserie data to use for reporting
-     * @param string $provider provider class name
-     * @param string $from_date from timestamp
-     * @param string $to_date to timestamp
+     * @param string $provider   provider class name
+     * @param string $from_date  from timestamp
+     * @param string $to_date    to timestamp
      * @param string $resolution resolution in seconds
+     *
      * @return string csv output
      */
     public function exportAction(
@@ -265,6 +280,7 @@ class NetworkinsightController extends ApiControllerBase
             $backend = new Backend();
             $configd_cmd = "netflow aggregate export {$provider} {$from_date} {$to_date} {$resolution}";
             $response = $backend->configdRun($configd_cmd);
+
             return $response;
         } else {
             return "";

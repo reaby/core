@@ -33,6 +33,7 @@ namespace OPNsense\Core\Api;
 use OPNsense\Base\ApiControllerBase;
 use OPNsense\Base\Menu;
 use OPNsense\Core\ACL;
+use Phalcon\Dispatcher;
 
 /**
  * Class MenuController

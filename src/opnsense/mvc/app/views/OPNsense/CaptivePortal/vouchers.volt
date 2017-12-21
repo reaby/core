@@ -35,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
          */
         function updateVoucherProviders() {
             ajaxGet(url="/api/captiveportal/voucher/listProviders/", sendData={}, callback=function(data, status) {
-                if (status == "success") {
+                if (status === "success") {
                     $('#voucher-providers').html("");
                     $.each(data, function(key, value) {
                         $('#voucher-providers').append($("<option></option>").attr("value", value).text(value));
@@ -61,7 +61,7 @@ POSSIBILITY OF SUCH DAMAGE.
         function updateVoucherGroupList() {
             var voucher_provider = $('#voucher-providers').find("option:selected").val();
             ajaxGet(url="/api/captiveportal/voucher/listVoucherGroups/" + voucher_provider + "/", sendData={}, callback=function(data, status) {
-                if (status == "success") {
+                if (status === "success") {
                     $('#voucher-groups').html("");
                     $.each(data, function(key, value) {
                         $('#voucher-groups').append($("<option></option>").attr("value", value).text(value));
@@ -107,7 +107,7 @@ POSSIBILITY OF SUCH DAMAGE.
             $("#grid-vouchers").bootgrid('destroy');
             ajaxGet(url = "/api/captiveportal/voucher/listVouchers/" + voucher_provider + "/" + voucher_group + "/",
                     sendData = {}, callback = function (data, status) {
-                        if (status == "success") {
+                        if (status === "success") {
                             $("#grid-vouchers > tbody").html('');
                             $.each(data, function (key, value) {
                                 var fields = ["username", "starttime", "endtime", "state"];
@@ -134,7 +134,7 @@ POSSIBILITY OF SUCH DAMAGE.
         $("#deleteVoucherGroup").click(function(){
             var voucher_group = $('#voucher-groups').find("option:selected").val();
             var voucher_provider = $('#voucher-providers').find("option:selected").val();
-            if (voucher_group != undefined) {
+            if (voucher_group !== undefined) {
                 BootstrapDialog.show({
                     type:BootstrapDialog.TYPE_DANGER,
                     title: '{{ lang._('Remove voucher group') }} "' + voucher_group + '" @ ' + voucher_provider,
@@ -231,7 +231,7 @@ POSSIBILITY OF SUCH DAMAGE.
         $("#dropExpired").click(function(){
             var voucher_group = $('#voucher-groups').find("option:selected").val();
             var voucher_provider = $('#voucher-providers').find("option:selected").val();
-            if (voucher_group != undefined) {
+            if (voucher_group !== undefined) {
                 BootstrapDialog.show({
                     type:BootstrapDialog.TYPE_DANGER,
                     title: '{{ lang._('Remove expired vouchers') }} "' + voucher_group + '" @ ' + voucher_provider,

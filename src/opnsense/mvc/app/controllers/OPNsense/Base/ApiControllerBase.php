@@ -26,10 +26,14 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace OPNsense\Base;
 
-use OPNsense\Core\ACL;
 use OPNsense\Auth\AuthenticationFactory;
+use OPNsense\Core\ACL;
+use OPNsense\Core\Backend;
+use Phalcon\Http\ResponseInterface;
+use Phalcon\Mvc\Dispatcher;
 
 /**
  * Class ApiControllerBase, inherit this class to implement API calls
@@ -40,7 +44,7 @@ class ApiControllerBase extends ControllerRoot
     /**
      * parse raw json type content to POST data depending on content type
      * (only for api calls)
-     * @return string
+     * @return string|null
      */
     private function parseJsonBodyData()
     {
@@ -54,31 +58,32 @@ class ApiControllerBase extends ControllerRoot
                 $_POST = $jsonRawBody;
                 break;
         }
+
         return null;
     }
 
     /**
      * Raise errors, warnings, notices, etc.
-     * @param $errno The first parameter, errno, contains the level of the
-     *               error raised, as an integer.
-     * @param $errstr The second parameter, errstr, contains the error
-     *                message, as a string.
-     * @param $errfile The third parameter is optional, errfile, which
-     *                 contains the filename that the error was raised in, as
-     *                 a string.
-     * @param $errline The fourth parameter is optional, errline, which
-     *                 contains the line number the error was raised at, as an
-     *                 integer.
-     * @param $errcontext The fifth parameter is optional, errcontext, which
-     *                    is an array that points to the active symbol table
-     *                    at the point the error occurred. In other words,
-     *                    errcontext will contain an array of every variable
-     *                    that existed in the scope the error was triggered
-     *                    in. User error handler must not modify error
-     *                    context.
+     * @param int    $errno      The first parameter, errno, contains the level of the
+     *                           error raised, as an integer.
+     * @param string $errstr     The second parameter, errstr, contains the error
+     *                           message, as a string.
+     * @param string $errfile    The third parameter is optional, errfile, which
+     *                           contains the filename that the error was raised in, as
+     *                           a string.
+     * @param int    $errline    The fourth parameter is optional, errline, which
+     *                           contains the line number the error was raised at, as an
+     *                           integer.
+     * @param array  $errcontext The fifth parameter is optional, errcontext, which
+     *                           is an array that points to the active symbol table
+     *                           at the point the error occurred. In other words,
+     *                           errcontext will contain an array of every variable
+     *                           that existed in the scope the error was triggered
+     *                           in. User error handler must not modify error
+     *                           context.
      * @throws \Exception
      */
-    public function APIErrorHandler($errno, $errstr, $errfile, $errline, $errcontext)
+    public function APIErrorHandler($errno, $errstr, $errfile, $errline, $errcontext = [])
     {
         if ($errno & error_reporting()) {
             $msg = "Error at $errfile:$errline - $errstr (errno=$errno)";
@@ -101,9 +106,9 @@ class ApiControllerBase extends ControllerRoot
      * In case of API calls, also prevalidates if request can be executed to return a more readable response
      * to the user.
      * @param Dispatcher $dispatcher
-     * @return null|bool
+     * @return bool
      */
-    public function beforeExecuteRoute($dispatcher)
+    public function beforeExecuteRoute(Dispatcher $dispatcher)
     {
         // handle authentication / authorization
         if (!empty($this->request->getHeader('Authorization'))) {
@@ -125,7 +130,7 @@ class ApiControllerBase extends ControllerRoot
                             $acl = new ACL();
                             if (!$acl->isPageAccessible($authResult['username'], $_SERVER['REQUEST_URI'])) {
                                 $this->getLogger()->error("uri ".$_SERVER['REQUEST_URI'].
-                                    " not accessible for user ".$authResult['username'] . " using api key ".
+                                    " not accessible for user ".$authResult['username']." using api key ".
                                     $apiKey);
                             } else {
                                 // authentication + authorization successful.
@@ -138,8 +143,8 @@ class ApiControllerBase extends ControllerRoot
                                     // only inspect parameters if object exists
                                     $req_c = $object_info->getMethod($callMethodName)->getNumberOfRequiredParameters();
                                     if ($req_c > count($dispatcher->getParams())) {
-                                        $dispatchError = 'action ' . $dispatcher->getActionName() .
-                                            ' expects at least ' . $req_c . ' parameter(s)';
+                                        $dispatchError = 'action '.$dispatcher->getActionName().
+                                            ' expects at least '.$req_c.' parameter(s)';
                                     }
                                 }
                                 // if body is send as json data, parse to $_POST first
@@ -150,10 +155,13 @@ class ApiControllerBase extends ControllerRoot
                                     $this->response->setStatusCode(400, "Bad Request");
                                     $this->response->setContentType('application/json', 'UTF-8');
                                     $this->response->setJsonContent(
-                                        array('message' => $dispatchError,
-                                            'status'  => 400)
+                                        [
+                                            'message' => $dispatchError,
+                                            'status' => 400,
+                                        ]
                                     );
                                     $this->response->send();
+
                                     return false;
                                 }
 
@@ -166,17 +174,19 @@ class ApiControllerBase extends ControllerRoot
             // not authenticated
             $this->response->setStatusCode(401, "Unauthorized");
             $this->response->setContentType('application/json', 'UTF-8');
-            $this->response->setJsonContent(array(
-                'status'  => 401,
+            $this->response->setJsonContent([
+                'status' => 401,
                 'message' => 'Authentication Failed',
-            ));
+            ]);
             $this->response->send();
+
             return false;
         } else {
             // handle UI ajax requests
             // use session data and ACL to validate request.
             if (!$this->doAuth()) {
                 $this->response->setStatusCode(401, "Unauthorized");
+
                 return false;
             }
 
@@ -192,21 +202,23 @@ class ApiControllerBase extends ControllerRoot
                 // missing csrf, exit.
                 $this->getLogger()->error("no matching csrf found for request");
                 $this->response->setStatusCode(403, "Forbidden");
+
                 return false;
             }
             // when request is using a json body (based on content type), parse it first
             $this->parseJsonBodyData();
         }
+        return true;
     }
 
     /**
      * process API results, serialize return data to json.
-     * @param $dispatcher
-     * @return string json data
+     * @param Dispatcher $dispatcher
+     * @return ResponseInterface|false json data
      */
-    public function afterExecuteRoute($dispatcher)
+    public function afterExecuteRoute(Dispatcher $dispatcher)
     {
-        // exit when reponse headers are already set
+        // exit when response headers are already set
         if ($this->response->getHeaders()->get("Status") != null) {
             return false;
         } else {

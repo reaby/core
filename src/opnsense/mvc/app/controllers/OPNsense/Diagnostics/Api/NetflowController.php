@@ -30,10 +30,10 @@
 
 namespace OPNsense\Diagnostics\Api;
 
-use \OPNsense\Base\ApiControllerBase;
-use \OPNsense\Diagnostics\Netflow;
-use \OPNsense\Core\Config;
-use \OPNsense\Core\Backend;
+use OPNsense\Base\ApiControllerBase;
+use OPNsense\Core\Backend;
+use OPNsense\Core\Config;
+use OPNsense\Diagnostics\Netflow;
 
 /**
  * Class NetflowController
@@ -54,6 +54,7 @@ class NetflowController extends ApiControllerBase
                 $result['local'] = 1;
             }
         }
+
         return $result;
     }
 
@@ -68,6 +69,7 @@ class NetflowController extends ApiControllerBase
             $mdlNetflow = new Netflow();
             $result['netflow'] = $mdlNetflow->getNodes();
         }
+
         return $result;
     }
 
@@ -75,10 +77,11 @@ class NetflowController extends ApiControllerBase
      * update netflow configuration fields
      * @return array
      * @throws \Phalcon\Validation\Exception
+     * @throws \OPNsense\Core\ConfigException
      */
     public function setconfigAction()
     {
-        $result = array("result"=>"failed");
+        $result = ["result" => "failed"];
         if ($this->request->hasPost("netflow")) {
             // load model and update with provided data
             $mdlNetflow = new Netflow();
@@ -110,6 +113,7 @@ class NetflowController extends ApiControllerBase
                 $result["result"] = "saved";
             }
         }
+
         return $result;
     }
 
@@ -131,7 +135,7 @@ class NetflowController extends ApiControllerBase
             $backend->configdRun("netflow stop");
             $backend->configdRun("netflow start");
             $mdlNetflow = new Netflow();
-            if ((string)$mdlNetflow->collect->enable == 1) {
+            if ((string)$mdlNetflow->collect->enable == "1") {
                 // don't try to restart the collector, to avoid data loss on reconfigure
                 $response = $backend->configdRun("netflow collect status");
                 if (strpos($response, "not running") > 0) {
@@ -144,9 +148,10 @@ class NetflowController extends ApiControllerBase
                 $backend->configdRun("netflow collect stop");
                 $backend->configdRun("netflow aggregate stop");
             }
-            return array("status" => "ok");
+
+            return ["status" => "ok"];
         } else {
-            return array("status" => "error");
+            return ["status" => "error"];
         }
     }
 
@@ -161,10 +166,11 @@ class NetflowController extends ApiControllerBase
         if (strpos($status, "netflow is active") !== false) {
             // active, return status active + number of configured collectors
             $collectors = trim(explode(')', explode(':', $status)[1])[0]);
-            return array("status" => "active", "collectors" => $collectors);
+
+            return ["status" => "active", "collectors" => $collectors];
         } else {
             // inactive
-            return array("status" => "inactive");
+            return ["status" => "inactive"];
         }
     }
 
@@ -177,10 +183,10 @@ class NetflowController extends ApiControllerBase
         $backend = new Backend();
         $response = $backend->configdRun("netflow cache stats json");
         $stats = json_decode($response, true);
-        if ($stats != null) {
+        if ($stats !== null) {
             return $stats;
         } else {
-            return array();
+            return [];
         }
     }
 }

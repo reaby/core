@@ -27,6 +27,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace OPNsense\Core;
 
 use Phalcon\Logger\Adapter\Syslog;
@@ -59,7 +60,7 @@ class Backend
     {
         $logger = new Syslog($ident, array(
             'option' => LOG_PID,
-            'facility' => LOG_LOCAL4
+            'facility' => LOG_LOCAL4,
         ));
 
         return $logger;
@@ -67,12 +68,13 @@ class Backend
 
     /**
      * send event to backend
-     * @param string $event event string
-     * @param bool $detach detach process
-     * @param int $timeout timeout in seconds
-     * @param int $connect_timeout connect timeout in seconds
-     * @return string
-     * @throws \Exception
+     * @param string $event           event string
+     * @param bool   $detach          detach process
+     * @param int    $timeout         timeout in seconds
+     * @param int    $connect_timeout connect timeout in seconds
+     *
+     * @return string|null
+     *
      */
     public function configdRun($event, $detach = false, $timeout = 120, $connect_timeout = 10)
     {
@@ -87,6 +89,7 @@ class Backend
             $timeout_wait -= 1;
             if ($timeout_wait <= 0) {
                 $this->getLogger()->error("failed waiting for configd (doesn't seem to be running)");
+
                 return null;
             }
         }
@@ -94,7 +97,8 @@ class Backend
         $resp = "";
         $stream = @stream_socket_client('unix://'.$this->configdSocket, $errorNumber, $errorMessage, $poll_timeout);
         if ($stream === false) {
-            $this->getLogger()->error("Failed to connect to configd socket: $errorMessage while executing " . $event);
+            $this->getLogger()->error("Failed to connect to configd socket: $errorMessage while executing ".$event);
+
             return null;
         }
 
@@ -109,7 +113,7 @@ class Backend
         // read response data
         $starttime = time();
         while (true) {
-            $resp = $resp . stream_get_contents($stream);
+            $resp = $resp.stream_get_contents($stream);
 
             if (strpos($resp, $endOfStream) !== false) {
                 // end of stream detected, exit
@@ -119,6 +123,7 @@ class Backend
             // handle timeouts
             if ((time() - $starttime) > $timeout) {
                 $this->getLogger()->error("Timeout (".$timeout.") executing : ".$event);
+
                 return null;
             }
         }
@@ -133,18 +138,17 @@ class Backend
 
     /**
      * send event to backend using command parameter list (which will be quoted for proper handling)
-     * @param string $event event string
-     * @param array $params list of parameters to send with command
-     * @param bool $detach detach process
-     * @param int $timeout timeout in seconds
+     * @param string $event   event string
+     * @param array  $params  list of parameters to send with command
+     * @param bool   $detach  detach process
+     * @param int    $timeout timeout in seconds
      * @return string
-     * @throws \Exception
      */
     public function configdpRun($event, $params = array(), $detach = false, $timeout = 120)
     {
         foreach ($params as $param) {
             // quote parameters
-            $event .= ' "' . str_replace('"', '\\"', $param) . '"';
+            $event .= ' "'.str_replace('"', '\\"', $param).'"';
         }
 
         return $this->configdRun($event, $detach, $timeout);

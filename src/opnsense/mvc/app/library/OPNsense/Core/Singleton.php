@@ -26,6 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace OPNsense\Core;
 
 /**
@@ -51,16 +52,16 @@ abstract class Singleton
 
     /**
      * Do not clone
-     * @throws Exception
+     * @throws \Exception
      */
     final private function __clone()
     {
-        throw new \Exception("An instance of " . get_called_class() . " cannot be cloned.");
+        throw new \Exception("An instance of ".get_called_class()." cannot be cloned.");
     }
 
     /**
      * get (new) instance
-     * @return object
+     * @return static
      */
     public static function getInstance()
     {
@@ -69,6 +70,7 @@ abstract class Singleton
         if (isset(self::$instances[$className]) == false) {
             self::$instances[$className] = new static();
         }
+
         return self::$instances[$className];
     }
 

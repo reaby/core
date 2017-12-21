@@ -28,9 +28,7 @@
 
 namespace OPNsense\Diagnostics\Api;
 
-use \OPNsense\Base\ApiControllerBase;
-use \OPNsense\Core\Config;
-use \OPNsense\Core\Backend;
+use OPNsense\Base\ApiControllerBase;
 
 /**
  * Class DnsController
@@ -41,7 +39,7 @@ class DnsController extends ApiControllerBase
 
     /**
      * perform a reverse dns lookup
-     * @return array
+     * @return array|null
      */
     public function reverse_lookupAction()
     {
@@ -50,9 +48,9 @@ class DnsController extends ApiControllerBase
             if (is_array($this->request->get('address'))) {
                 $address = $this->request->get('address');
             } else {
-                $address = array($this->request->get('address'));
+                $address = [$this->request->get('address')];
             }
-            $result = array();
+            $result = [];
             foreach ($address as $addr) {
                 if (!empty(filter_var($addr, FILTER_VALIDATE_IP))) {
                     $result[$addr] = gethostbyaddr($addr);
@@ -60,7 +58,9 @@ class DnsController extends ApiControllerBase
                     $result[$addr] = $addr;
                 }
             }
+
             return $result;
+
         } else {
             return null;
         }

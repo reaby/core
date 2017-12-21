@@ -29,6 +29,7 @@
 namespace OPNsense\Base;
 
 use OPNsense\Core\Config;
+use Phalcon\Mvc\Dispatcher;
 
 /**
  * Class ControllerBase implements core controller for OPNsense framework
@@ -39,19 +40,19 @@ class ControllerBase extends ControllerRoot
     /**
      * convert xml form definition to simple data structure to use in our Volt templates
      *
-     * @param $xmlNode
+     * @param \SimpleXMLElement $xmlNode
      * @return array
      */
     private function parseFormNode($xmlNode)
     {
-        $result = array();
+        $result = [];
         foreach ($xmlNode as $key => $node) {
             switch ($key) {
                 case "tab":
                     if (!array_key_exists("tabs", $result)) {
-                        $result['tabs'] = array();
+                        $result['tabs'] = [];
                     }
-                    $tab = array();
+                    $tab = [];
                     $tab[] = $node->attributes()->id;
                     $tab[] = gettext((string)$node->attributes()->description);
                     if (isset($node->subtab)) {
@@ -62,7 +63,7 @@ class ControllerBase extends ControllerRoot
                     $result['tabs'][] = $tab;
                     break;
                 case "subtab":
-                    $subtab = array();
+                    $subtab = [];
                     $subtab[] = $node->attributes()->id;
                     $subtab[] = gettext((string)$node->attributes()->description);
                     $subtab[] = $this->parseFormNode($node);
@@ -89,17 +90,19 @@ class ControllerBase extends ControllerRoot
 
     /**
      * parse an xml type form
-     * @param $formname
+     * @param string $formName
      * @return array
      * @throws \Exception
      */
-    public function getForm($formname)
+    public function getForm($formName)
     {
-        $class_info = new \ReflectionClass($this);
-        $filename = dirname($class_info->getFileName()) . "/forms/".$formname.".xml";
+        $classInfo = new \ReflectionClass($this);
+        $filename = dirname($classInfo->getFileName())."/forms/".$formName.".xml";
+
         if (!file_exists($filename)) {
             throw new \Exception('form xml '.$filename.' missing');
         }
+
         $formXml = simplexml_load_file($filename);
         if ($formXml === false) {
             throw new \Exception('form xml '.$filename.' not valid');
@@ -119,11 +122,11 @@ class ControllerBase extends ControllerRoot
 
     /**
      * shared functionality for all components
-     * @param $dispatcher
+     * @param Dispatcher $dispatcher
      * @return bool
      * @throws \Exception
      */
-    public function beforeExecuteRoute($dispatcher)
+    public function beforeExecuteRoute(Dispatcher $dispatcher)
     {
         // only handle input validation on first request.
         if (!$dispatcher->wasForwarded()) {
@@ -134,9 +137,11 @@ class ControllerBase extends ControllerRoot
             }
 
             // check for valid csrf on post requests
-            if ($this->request->isPost() && !$this->security->checkToken(null, null, false)) {
+            if ($this->request->isPost() &&
+                !$this->security->checkToken(null, null, false)) {
                 // post without csrf, exit.
                 $this->response->setStatusCode(403, "Forbidden");
+
                 return false;
             }
 
@@ -165,7 +170,7 @@ class ControllerBase extends ControllerRoot
         $menu = new Menu\MenuSystem();
 
         // add interfaces to "Interfaces" menu tab... kind of a hack, may need some improvement.
-        $cnf = Config::getInstance();
+        $config = Config::getInstance()->object();
 
         $this->view->setVar('lang', $this->translator);
         $this->view->menuSystem = $menu->getItems("/ui".$this->router->getRewriteUri());
@@ -173,29 +178,30 @@ class ControllerBase extends ControllerRoot
         $this->view->menuBreadcrumbs = $menu->getBreadcrumbs();
 
         // set theme in ui_theme template var, let template handle its defaults (if there is no theme).
-        if ($cnf->object()->theme->count() > 0 && !empty($cnf->object()->theme) &&
-            is_dir('/usr/local/opnsense/www/themes/'.(string)$cnf->object()->theme)
+        if ($config->theme->count() > 0 && !empty($config->theme) &&
+            is_dir('/usr/local/opnsense/www/themes/'.(string)$config->theme)
         ) {
-            $this->view->ui_theme = $cnf->object()->theme;
+            $this->view->ui_theme = $config->theme;
         }
 
         $product_vars = json_decode(file_get_contents('/usr/local/opnsense/firmware-product'), true);
         foreach ($product_vars as $product_key => $product_var) {
-            $this->view->$product_key = $product_var;
+            $this->view->{$product_key} = $product_var;
         }
 
         // info about the current user and box
         $this->view->session_username = !empty($_SESSION['Username']) ? $_SESSION['Username'] : '(unknown)';
-        $this->view->system_hostname = $cnf->object()->system->hostname;
-        $this->view->system_domain = $cnf->object()->system->domain;
+        $this->view->system_hostname = $config->system->hostname;
+        $this->view->system_domain = $config->system->domain;
 
         if (isset($this->view->menuBreadcrumbs[0]['name'])) {
-            $output = array();
+            $output = [];
             foreach ($this->view->menuBreadcrumbs as $crumb) {
                 $output[] = gettext($crumb['name']);
             }
             $this->view->title = join(': ', $output);
-            $output = array();
+
+            $output = [];
             foreach (array_reverse($this->view->menuBreadcrumbs) as $crumb) {
                 $output[] = gettext($crumb['name']);
             }
